@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ЦСЯ Числа">
+    <meta name="theme-color" content="#8b4513">
+    <title>Церковнославянские числа</title>
+
+    <!-- Подключение церковнославянских шрифтов -->
+    <link rel="stylesheet" href="css/fonts.css">
+
+    <style>
+        :root {
+            --bg-color: #f4f1ea;
+            --text-color: #2c2c2c;
+            --accent-color: #8b4513;
+            --card-bg: #ffffff;
+            --correct-color: #2e7d32;
+            --wrong-color: #c62828;
+            --border-color: #d4c5a9;
+            --slavic-font: 'Ponomar', 'FiraSlav', 'Times New Roman', serif;
+        }
+
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom)) 20px;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            color: var(--accent-color);
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #777;
+            margin-bottom: 25px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: #eee;
+            border-radius: 3px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .card {
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .number-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+            line-height: 1;
+            font-family: 'Georgia', serif;
+        }
+
+        .cyrillic-display {
+            font-family: var(--slavic-font);
+            font-size: 5rem;
+            color: var(--text-color);
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+            line-height: 1.2;
+            font-feature-settings: "liga" 1, "calt" 1;
+        }
+
+        .cyrillic-display.quiz-view {
+            font-size: 6rem;
+        }
+
+        .number-appear {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .number-appear.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hint {
+            font-size: 0.9rem;
+            color: #888;
+            font-style: italic;
+        }
+
+        .breakdown {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 12px;
+            line-height: 1.8;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .breakdown.visible {
+            opacity: 1;
+        }
+
+        .breakdown span {
+            display: inline-block;
+            background: #f0e9dc;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin: 2px;
+            font-size: 0.85rem;
+        }
+
+        .breakdown .cyr-sign {
+            font-family: var(--slavic-font);
+            font-size: 1.1rem;
+            color: var(--accent-color);
+        }
+
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        button {
+            padding: 14px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 48px;
+            touch-action: manipulation;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #6d3610;
+        }
+
+        .btn-secondary {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background-color: #d0d0d0;
+        }
+
+        .btn-study {
+            background-color: #d4c5a9;
+            color: #5a3a1a;
+            font-weight: bold;
+        }
+
+        .btn-study:hover {
+            background-color: #c5b393;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 14px;
+            font-size: 1.2rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-family: inherit;
+            text-align: center;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .feedback {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            min-height: 1.5rem;
+        }
+
+        .feedback .cyr-sign {
+            font-family: var(--slavic-font);
+            font-size: 1.4rem;
+        }
+
+        .correct { color: var(--correct-color); }
+        .wrong { color: var(--wrong-color); }
+
+        .stats {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .section-selector {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .section-btn {
+            padding: 8px 14px;
+            font-size: 0.85rem;
+            background-color: #eee;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 40px;
+            touch-action: manipulation;
+        }
+
+        .section-btn.active {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .section-btn.teens {
+            border-color: #6a8caf;
+            color: #35506b;
+            font-weight: bold;
+        }
+
+        .section-btn.teens.active {
+            background-color: #6a8caf;
+            color: white;
+            border-color: #6a8caf;
+        }
+
+        .section-btn.mixed-tens {
+            border-color: #7a9e5c;
+            color: #4a6b30;
+            font-weight: bold;
+        }
+
+        .section-btn.mixed-tens.active {
+            background-color: #7a9e5c;
+            color: white;
+            border-color: #7a9e5c;
+        }
+
+        .section-btn.mixed-hundreds {
+            border-color: #b8860b;
+            color: #8b4513;
+            font-weight: bold;
+        }
+
+        .section-btn.mixed-hundreds.active {
+            background-color: #b8860b;
+            color: white;
+            border-color: #b8860b;
+        }
+
+        .section-btn.mixed-full {
+            border-color: #9b59b6;
+            color: #6c3483;
+            font-weight: bold;
+        }
+
+        .section-btn.mixed-full.active {
+            background-color: #9b59b6;
+            color: white;
+            border-color: #9b59b6;
+        }
+
+        .mode-indicator {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-bottom: 15px;
+            background: #eee;
+            color: #666;
+        }
+
+        .mode-indicator.quiz-mode {
+            background: #fce4e4;
+            color: #c62828;
+        }
+
+        @media (max-width: 480px) {
+            .number-display { font-size: 2.5rem; }
+            .cyrillic-display { font-size: 4rem; }
+            .cyrillic-display.quiz-view { font-size: 5rem; }
+            .container { padding: 20px; }
+            .section-btn { padding: 6px 10px; font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Церковнославянские числа</h1>
+    <div class="subtitle">Изучение и проверка узнавания</div>
+
+    <div class="section-selector">
+        <button class="section-btn active" data-section="units">Единицы</button>
+        <button class="section-btn teens" data-section="teens">11–20</button>
+        <button class="section-btn" data-section="tens">Десятки</button>
+        <button class="section-btn" data-section="hundreds">Сотни</button>
+        <button class="section-btn mixed-tens" data-section="mixedTens">Смеш. десятки</button>
+        <button class="section-btn mixed-hundreds" data-section="mixedHundreds">Смеш. сотни</button>
+        <button class="section-btn mixed-full" data-section="mixedFull">Смеш. полные</button>
+    </div>
+
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div id="modeIndicator" class="mode-indicator">📖 Режим изучения</div>
+
+    <div class="card" id="card"></div>
+
+    <div class="buttons" id="buttonsContainer"></div>
+
+    <div class="feedback" id="feedback"></div>
+    <div class="stats" id="stats"></div>
+</div>
+
+<script>
+    const signs = {
+        units: {
+            1: { cyr: 'а҃', name: 'аз' },
+            2: { cyr: 'в҃', name: 'веди' },
+            3: { cyr: 'г҃', name: 'глаголь' },
+            4: { cyr: 'д҃', name: 'добро' },
+            5: { cyr: 'є҃', name: 'есть' },
+            6: { cyr: 'ѕ҃', name: 'зело' },
+            7: { cyr: 'з҃', name: 'земля' },
+            8: { cyr: 'и҃', name: 'иже' },
+            9: { cyr: 'ѳ҃', name: 'фита' }
+        },
+        tens: {
+            10: { cyr: 'і҃', name: 'иже (десять)' },
+            20: { cyr: 'к҃', name: 'како' },
+            30: { cyr: 'л҃', name: 'люди' },
+            40: { cyr: 'м҃', name: 'мыслете' },
+            50: { cyr: 'н҃', name: 'наш' },
+            60: { cyr: 'ѯ҃', name: 'кси' },
+            70: { cyr: 'ѻ҃', name: 'он (оник)' },
+            80: { cyr: 'п҃', name: 'покой' },
+            90: { cyr: 'ч҃', name: 'червь' }
+        },
+        hundreds: {
+            100: { cyr: 'р҃', name: 'рцы' },
+            200: { cyr: 'с҃', name: 'слово' },
+            300: { cyr: 'т҃', name: 'твердо' },
+            400: { cyr: 'у҃', name: 'ук' },
+            500: { cyr: 'ф҃', name: 'ферт' },
+            600: { cyr: 'х҃', name: 'хер' },
+            700: { cyr: 'ѱ҃', name: 'пси' },
+            800: { cyr: 'ѡ҃', name: 'омега' },
+            900: { cyr: 'ц҃', name: 'цы' }
+        }
+    };
+
+    const sections = {
+        units: Object.entries(signs.units).map(([num, s]) => ({
+            num: parseInt(num),
+            cyr: s.cyr,
+            name: s.name
+        })),
+        tens: Object.entries(signs.tens).map(([num, s]) => ({
+            num: parseInt(num),
+            cyr: s.cyr,
+            name: s.name
+        })),
+        hundreds: Object.entries(signs.hundreds).map(([num, s]) => ({
+            num: parseInt(num),
+            cyr: s.cyr,
+            name: s.name
+        }))
+    };
+
+    // Раздел 11–20
+    function buildTeens() {
+        const teens = [];
+        for (let u = 1; u <= 9; u++) {
+            const num = 10 + u;
+            const unitSign = signs.units[u];
+            const tenSign = signs.tens[10];
+            teens.push({
+                num: num,
+                cyr: unitSign.cyr + tenSign.cyr,
+                names: [unitSign.name, tenSign.name]
+            });
+        }
+        teens.push({
+            num: 20,
+            cyr: signs.tens[20].cyr,
+            names: [signs.tens[20].name]
+        });
+        return teens;
+    }
+
+    const teensSection = buildTeens();
+
+    // Общая функция составления числа
+    function composeNumber(num) {
+        const parts = [];
+        const names = [];
+
+        const h = Math.floor(num / 100) * 100;
+        const t = Math.floor((num % 100) / 10) * 10;
+        const u = num % 10;
+
+        if (h > 0) {
+            parts.push(signs.hundreds[h].cyr);
+            names.push(signs.hundreds[h].name);
+        }
+        if (t > 0) {
+            parts.push(signs.tens[t].cyr);
+            names.push(signs.tens[t].name);
+        }
+        if (u > 0) {
+            parts.push(signs.units[u].cyr);
+            names.push(signs.units[u].name);
+        }
+
+        return { cyr: parts.join(''), names: names };
+    }
+
+    // Смешанные десятки: 21-99, не круглые (не 30, 40, ...)
+    function generateMixedTensNumber() {
+        // Десяток: 20, 30, ..., 90 (не 10 — там 11-19 отдельно)
+        const tensArr = [20, 30, 40, 50, 60, 70, 80, 90];
+        const t = tensArr[Math.floor(Math.random() * tensArr.length)];
+        const u = Math.floor(Math.random() * 9) + 1; // 1..9
+        return t + u;
+    }
+
+    function generateMixedTensSet(count = 12) {
+        const set = new Set();
+        while (set.size < count) {
+            set.add(generateMixedTensNumber());
+        }
+        return Array.from(set).map(num => {
+            const composed = composeNumber(num);
+            return {
+                num: num,
+                cyr: composed.cyr,
+                names: composed.names
+            };
+        });
+    }
+
+    // Смешанные сотни: 101-999, включая сотни+десятки+единицы
+    // Условие: есть сотни, и есть хотя бы ещё что-то (десятки или единицы)
+    function generateMixedHundredsNumber() {
+        let num;
+        do {
+            num = Math.floor(Math.random() * 899) + 101; // 101..999
+        } while (num % 100 === 0); // исключаем 200, 300 и т.п.
+        return num;
+    }
+
+    function generateMixedHundredsSet(count = 12) {
+        const set = new Set();
+        while (set.size < count) {
+            set.add(generateMixedHundredsNumber());
+        }
+        return Array.from(set).map(num => {
+            const composed = composeNumber(num);
+            return {
+                num: num,
+                cyr: composed.cyr,
+                names: composed.names
+            };
+        });
+    }
+
+    // Смешанные полные: 11-999, не кратные 10 и не кратные 100
+    function generateMixedFullNumber() {
+        let num;
+        do {
+            num = Math.floor(Math.random() * 989) + 11;
+        } while (num % 10 === 0 || num % 100 === 0);
+        return num;
+    }
+
+    function generateMixedFullSet(count = 12) {
+        const set = new Set();
+        while (set.size < count) {
+            set.add(generateMixedFullNumber());
+        }
+        return Array.from(set).map(num => {
+            const composed = composeNumber(num);
+            return {
+                num: num,
+                cyr: composed.cyr,
+                names: composed.names
+            };
+        });
+    }
+
+    let currentSection = 'units';
+    let currentIndex = 0;
+    let currentMode = 'learn';
+    let correctAnswers = 0;
+    let totalAttempts = 0;
+    let items = [];
+    let revealTimer = null;
+
+    const cardEl = document.getElementById('card');
+    const buttonsContainer = document.getElementById('buttonsContainer');
+    const feedbackEl = document.getElementById('feedback');
+    const progressFill = document.getElementById('progressFill');
+    const statsEl = document.getElementById('stats');
+    const modeIndicator = document.getElementById('modeIndicator');
+    const sectionBtns = document.querySelectorAll('.section-btn');
+
+    function init() {
+        loadSection(currentSection);
+        sectionBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                sectionBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                loadSection(btn.dataset.section);
+            });
+        });
+    }
+
+    function loadSection(section) {
+        if (revealTimer) {
+            clearTimeout(revealTimer);
+            revealTimer = null;
+        }
+        
+        currentSection = section;
+        
+        switch (section) {
+            case 'mixedTens':
+                items = generateMixedTensSet(12);
+                break;
+            case 'mixedHundreds':
+                items = generateMixedHundredsSet(12);
+                break;
+            case 'mixedFull':
+                items = generateMixedFullSet(12);
+                break;
+            case 'teens':
+                items = [...teensSection];
+                break;
+            default:
+                items = [...sections[section]];
+        }
+        
+        shuffleArray(items);
+        currentIndex = 0;
+        currentMode = 'learn';
+        correctAnswers = 0;
+        totalAttempts = 0;
+        updateProgress();
+        renderCard();
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function updateProgress() {
+        const progress = (currentIndex / items.length) * 100;
+        progressFill.style.width = progress + '%';
+        
+        if (totalAttempts > 0) {
+            statsEl.textContent = `Правильно: ${correctAnswers} из ${totalAttempts}`;
+        } else {
+            statsEl.textContent = '';
+        }
+    }
+
+    function updateModeIndicator() {
+        if (currentMode === 'learn') {
+            modeIndicator.textContent = '📖 Режим изучения';
+            modeIndicator.className = 'mode-indicator';
+        } else {
+            modeIndicator.textContent = '✍️ Режим проверки';
+            modeIndicator.className = 'mode-indicator quiz-mode';
+        }
+    }
+
+    function renderBreakdown(item) {
+        if (!item.names || item.names.length <= 1) return '';
+        
+        const h = Math.floor(item.num / 100) * 100;
+        const t = Math.floor((item.num % 100) / 10) * 10;
+        const u = item.num % 10;
+        
+        const parts = [];
+        if (h > 0) parts.push(`${h} — <span class="cyr-sign">${signs.hundreds[h].cyr}</span> «${signs.hundreds[h].name}»`);
+        if (t > 0) parts.push(`${t} — <span class="cyr-sign">${signs.tens[t].cyr}</span> «${signs.tens[t].name}»`);
+        if (u > 0) parts.push(`${u} — <span class="cyr-sign">${signs.units[u].cyr}</span> «${signs.units[u].name}»`);
+        
+        return `<div class="breakdown" id="breakdown">${parts.map(p => `<span>${p}</span>`).join('')}</div>`;
+    }
+
+    function renderCard() {
+        if (revealTimer) {
+            clearTimeout(revealTimer);
+            revealTimer = null;
+        }
+        
+        feedbackEl.textContent = '';
+        feedbackEl.className = 'feedback';
+        updateModeIndicator();
+
+        if (currentIndex >= items.length) {
+            renderCompletion();
+            return;
+        }
+
+        const item = items[currentIndex];
+
+        if (currentMode === 'learn') {
+            const breakdownHtml = renderBreakdown(item);
+            const nameStr = item.names ? item.names.join(' + ') : item.name;
+            
+            cardEl.innerHTML = `
+                <div class="cyrillic-display">${item.cyr}</div>
+                <div class="number-display number-appear" id="numberReveal">${item.num}</div>
+                <div class="hint number-appear" id="hintReveal">«${nameStr}»</div>
+                ${breakdownHtml}
+            `;
+            
+            buttonsContainer.innerHTML = `
+                <button class="btn-primary" onclick="startQuiz()">Проверить узнавание</button>
+            `;
+            
+            revealTimer = setTimeout(() => {
+                const numberEl = document.getElementById('numberReveal');
+                const hintEl = document.getElementById('hintReveal');
+                const breakdownEl = document.getElementById('breakdown');
+                
+                if (numberEl) numberEl.classList.add('visible');
+                if (hintEl) hintEl.classList.add('visible');
+                if (breakdownEl) breakdownEl.classList.add('visible');
+                
+                revealTimer = null;
+            }, 1000);
+            
+        } else {
+            cardEl.innerHTML = `
+                <div class="cyrillic-display quiz-view">${item.cyr}</div>
+                <div class="hint">Введите арабское число:</div>
+            `;
+            buttonsContainer.innerHTML = `
+                <div class="input-group">
+                    <input type="text" id="answerInput" placeholder="Например: 1" autocomplete="off" autofocus inputmode="numeric">
+                    <button class="btn-primary" onclick="checkAnswer()">Ответить</button>
+                </div>
+                <button class="btn-secondary" onclick="showHint()">Подсказка</button>
+                <button class="btn-study" onclick="switchToLearn()">📖 Вернуться в режим изучения</button>
+            `;
+            const input = document.getElementById('answerInput');
+            input.focus();
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') checkAnswer();
+            });
+        }
+
+        updateProgress();
+    }
+
+    function startQuiz() {
+        currentMode = 'quiz';
+        renderCard();
+    }
+
+    function switchToLearn() {
+        currentMode = 'learn';
+        renderCard();
+    }
+
+    function checkAnswer() {
+        const input = document.getElementById('answerInput');
+        const userAnswer = input.value.trim();
+        const item = items[currentIndex];
+        
+        totalAttempts++;
+
+        if (userAnswer === String(item.num)) {
+            correctAnswers++;
+            feedbackEl.textContent = '✅ Верно! Переход к следующему...';
+            feedbackEl.className = 'feedback correct';
+            
+            if (navigator.vibrate) navigator.vibrate(50);
+            
+            setTimeout(() => {
+                currentIndex++;
+                renderCard();
+            }, 800);
+        } else {
+            const nameStr = item.names ? item.names.join(' + ') : item.name;
+            feedbackEl.innerHTML = `❌ Неверно. Правильный ответ: ${item.num} (<span class="cyr-sign">${item.cyr}</span> «${nameStr}»)`;
+            feedbackEl.className = 'feedback wrong';
+            
+            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+            
+            input.value = '';
+            input.focus();
+            
+            updateProgress();
+        }
+    }
+
+    function showHint() {
+        const item = items[currentIndex];
+        const nameStr = item.names ? item.names.join(' + ') : item.name;
+        feedbackEl.textContent = `💡 Подсказка: «${nameStr}»`;
+        feedbackEl.className = 'feedback';
+    }
+
+    function renderCompletion() {
+        progressFill.style.width = '100%';
+        const percent = totalAttempts > 0 ? Math.round((correctAnswers / totalAttempts) * 100) : 0;
+        
+        cardEl.innerHTML = `
+            <div style="font-size: 3rem; margin-bottom: 15px;">🎉</div>
+            <h2 style="color: var(--accent-color); margin: 0 0 10px 0;">Раздел пройден!</h2>
+            <div style="font-size: 1.2rem; margin-bottom: 5px;">
+                Правильно: <strong>${correctAnswers}</strong> из <strong>${totalAttempts}</strong>
+            </div>
+            <div style="font-size: 1rem; color: #666;">
+                Точность: <strong>${percent}%</strong>
+            </div>
+        `;
+        buttonsContainer.innerHTML = `
+            <button class="btn-primary" onclick="loadSection('${currentSection}')">Пройти заново</button>
+        `;
+        statsEl.textContent = '';
+        modeIndicator.textContent = '';
+        modeIndicator.className = 'mode-indicator';
+    }
+
+    init();
+</script>
+</body>
+</html>
